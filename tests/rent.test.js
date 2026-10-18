@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {aggregate,collect,onRequestGet,SERVICE} from '../functions/api/rent.js';
+const filter={year:'2026',district:'11680',dong:'10100',type:'아파트'};
+const row=(amount,kind='전세',rent='0')=>({RCPT_YR:'2026',CGG_CD:'11680',STDG_CD:'10100',BLDG_USG:'아파트',RENT_SE:kind,GRFE:amount,RTFE:rent});
+test('전세만 집계하고 유효하지 않은 금액 제외, 같은 거래값 임의 제거 안 함',()=>{const a=aggregate([row('10000'),row('30,000'),row('10000'),row('999','월세','30'),row(''),row('-1'),row('0'),row('12x'),row('100','전세','2')],filter);assert.equal(a.sum,50000);assert.equal(a.count,3);assert.equal(a.excluded.invalidMoney,5);assert.equal(a.excluded.notJeonse,1);});
+test('1000건+3건 페이지 합산, 단순 평균의 평균 방지',async()=>{let calls=0;const mock=async url=>{calls++;const start=Number(new URL(url).pathname.split('/')[4]);return Response.json({[SERVICE]:{RESULT:{CODE:'INFO-000'},list_total_count:1003,row:start===1?Array.from({length:1000},()=>row('10000')):Array.from({length:3},()=>row('30000'))}});};const a=await collect(filter,'FAKE_TEST_KEY',mock);assert.equal(calls,2);assert.equal(a.count,1003);assert.equal(a.average,10090000/1003);assert.equal(a.complete,true);});
+test('누락된 후속 페이지는 결과 반환 안 함',async()=>{let i=0;await assert.rejects(collect(filter,'test',async()=>Response.json({[SERVICE]:{RESULT:{CODE:'INFO-000'},list_total_count:1001,row:i++===0?Array.from({length:1000},()=>row('1')):[]}})),/누락/);});
+test('자료 없음은 null',async()=>{const a=await collect(filter,'test',async()=>Response.json({RESULT:{CODE:'INFO-200'}}));assert.equal(a.average,null);assert.equal(a.count,0);});
+test('지역 코드 불일치는 조용히 제외하지 않음',()=>assert.throws(()=>aggregate([{...row('1'),STDG_CD:'99999'}],filter),/일치/));
+test('키 미설정과 잘못된 조건',async()=>{const request=new Request('https://example.test/api/rent?'+new URLSearchParams(filter));const r=await onRequestGet({request,env:{}});assert.equal(r.status,503);const invalid=await onRequestGet({request:new Request('https://example.test/api/rent'),env:{}});assert.equal(invalid.status,400);});
+test('원본 오류에 키가 있어도 노출하지 않음',async()=>{await assert.rejects(collect(filter,'SECRET',async()=>{throw Error('SECRET');}),e=>!e.message.includes('SECRET'));});
+test('인증 실패, 호출 제한, 잘못된 응답 처리',async()=>{for(const response of [Response.json({RESULT:{CODE:'INFO-100'}}),new Response('',{status:429}),new Response('<html>')])await assert.rejects(collect(filter,'test',async()=>response));});

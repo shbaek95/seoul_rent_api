@@ -1,0 +1,25 @@
+{
+  "boundarySource": "https://raw.githubusercontent.com/KnellBalm/kr-admin-geojson/main/emd.geojson",
+  "boundaryFeatures": 467,
+  "archives": {
+    "2022": {
+      "total": 560665,
+      "accepted": 277600,
+      "excluded": {
+        "notJeonse": 276568,
+        "wrongYear": 6424,
+        "invalidMoney": 73
+      },
+      "sha256": "77483fe458b54523042aa6443c25034918dd4cea220bd6e871b5332ac4cc3dab"
+    },
+    "2023": {
+      "total": 545813,
+      "accepted": 262337,
+      "excluded": {
+        "notJeonse": 283341,
+        "invalidMoney": 135
+      },
+      "sha256": "8edf19b8c94fd81ebad58438a521cf789e2eb37b413323159e4990484701664b"
+    }
+  }
+}

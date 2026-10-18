@@ -1,0 +1,1 @@
+{"name":"seoul-rent-api","version":"1.0.0","private":true,"type":"module","scripts":{"dev":"wrangler pages dev public","test":"node --test","check":"node --check public/script.js && node --check functions/api/rent.js"},"devDependencies":{"wrangler":"4.151.1"}}
