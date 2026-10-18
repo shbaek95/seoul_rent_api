@@ -13,6 +13,8 @@ export function aggregate(rows, filter) {
   const result={sum:0,count:0,excluded:{notJeonse:0,invalidMoney:0}};
   // 반복문으로 개별 거래의 합계와 건수를 더한다. 같은 금액의 거래도 삭제하지 않는다.
   for (const row of rows) {
+    if (!row || !['RCPT_YR','CGG_CD','STDG_CD','BLDG_USG','RENT_SE','GRFE','RTFE'].every(k=>Object.hasOwn(row,k)))
+      throw new PublicError('서울 API 필수 필드가 누락되었습니다. 집계를 중단했습니다.');
     if (String(row.RCPT_YR)!==filter.year || String(row.CGG_CD)!==filter.district || String(row.STDG_CD)!==filter.dong || row.BLDG_USG!==filter.type)
       throw new PublicError('API 검색 조건과 응답이 일치하지 않습니다. 집계를 중단했습니다.');
     if (row.RENT_SE!=='전세') { result.excluded.notJeonse++; continue; }
@@ -51,6 +53,7 @@ export async function collect(filter,key,fetcher=fetch) {
     if (p.total!==total || p.rows.length!==Math.min(PAGE,total-start+1)) throw new PublicError('조회 중 데이터 건수가 변경되었거나 일부 페이지가 누락됐습니다. 다시 조회해 주세요.',409);
     const a=aggregate(p.rows,filter);
     seen+=p.rows.length; combined.sum+=a.sum; combined.count+=a.count;
+    if (!Number.isSafeInteger(combined.sum)) throw new PublicError('전체 금액 합계의 안전 범위를 초과했습니다.');
     for (const k of Object.keys(combined.excluded)) combined.excluded[k]+=a.excluded[k];
   }
   if(total) add(first,1);

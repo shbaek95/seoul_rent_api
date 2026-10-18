@@ -8,6 +8,7 @@ test('1000건+3건 페이지 합산, 단순 평균의 평균 방지',async()=>{l
 test('누락된 후속 페이지는 결과 반환 안 함',async()=>{let i=0;await assert.rejects(collect(filter,'test',async()=>Response.json({[SERVICE]:{RESULT:{CODE:'INFO-000'},list_total_count:1001,row:i++===0?Array.from({length:1000},()=>row('1')):[]}})),/누락/);});
 test('자료 없음은 null',async()=>{const a=await collect(filter,'test',async()=>Response.json({RESULT:{CODE:'INFO-200'}}));assert.equal(a.average,null);assert.equal(a.count,0);});
 test('지역 코드 불일치는 조용히 제외하지 않음',()=>assert.throws(()=>aggregate([{...row('1'),STDG_CD:'99999'}],filter),/일치/));
+test('필수 필드 누락은 자료 없음으로 오인하지 않음',()=>assert.throws(()=>aggregate([{}],filter),/필수 필드/));
 test('키 미설정과 잘못된 조건',async()=>{const request=new Request('https://example.test/api/rent?'+new URLSearchParams(filter));const r=await onRequestGet({request,env:{}});assert.equal(r.status,503);const invalid=await onRequestGet({request:new Request('https://example.test/api/rent'),env:{}});assert.equal(invalid.status,400);});
 test('원본 오류에 키가 있어도 노출하지 않음',async()=>{await assert.rejects(collect(filter,'SECRET',async()=>{throw Error('SECRET');}),e=>!e.message.includes('SECRET'));});
 test('인증 실패, 호출 제한, 잘못된 응답 처리',async()=>{for(const response of [Response.json({RESULT:{CODE:'INFO-100'}}),new Response('',{status:429}),new Response('<html>')])await assert.rejects(collect(filter,'test',async()=>response));});
