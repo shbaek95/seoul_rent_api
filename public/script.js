@@ -81,7 +81,7 @@ async function run(event){
   if(!q.district||!q.dong||!q.type){status('자치구·동·주택유형을 모두 선택해 주세요.',true);return;}
   $('average').textContent='조회 중';$('count').textContent='조회 중';$('stamp').textContent='모든 페이지를 확인하고 있습니다.';$('selection').textContent=`${q.year}년 · ${$('district').selectedOptions[0].textContent} ${$('dong').selectedOptions[0].textContent} · ${q.type}`;
   status('전세 거래의 전체 페이지를 집계하고 있습니다.');
-  activeMap=new Map();renderMap(q);const history=new Map();renderHistory(history);
+  activeMap=new Map();renderMap(q);$('map-status').textContent='선택 동과 연도별 자료 확인 후 구 전체 동을 조회합니다.';const history=new Map();renderHistory(history);
   try{const data=await getRent(q,signal);if(id!==version)return;card(q,data);activeMap.set(q.dong,data);status(data.count?'전체 페이지 집계를 완료했습니다. 지도와 과거 자료를 이어서 확인합니다.':'선택한 조건의 유효한 전세 거래가 없습니다.');}
   catch(e){if(signal.aborted)return;$('average').textContent='확인 불가';$('count').textContent='—';$('stamp').textContent='조회 버튼으로 다시 시도할 수 있습니다.';status(e.message,true);activeMap.set(q.dong,{error:e.message});}
   if(signal.aborted)return;
